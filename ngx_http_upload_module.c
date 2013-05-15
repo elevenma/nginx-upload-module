@@ -3185,9 +3185,11 @@ ngx_http_read_upload_client_request_body(ngx_http_request_t *r) {
         if (rb->rest <= (off_t) (b->end - b->last)) {
 
             /* the whole request body may be placed in r->header_in */
-
+#if defined nginx_version && nginx_version >= 1004000
+	    rb->free = rb->bufs;
+#else
             rb->to_write = rb->bufs;
-
+#endif
             r->read_event_handler = ngx_http_read_upload_client_request_body_handler;
 
             return ngx_http_do_read_upload_client_request_body(r);
@@ -3244,9 +3246,11 @@ ngx_http_read_upload_client_request_body(ngx_http_request_t *r) {
     }
 
     *next = cl;
-
+#if define nginx_version && nginx_version >= 1004000
+    rb->free = rb->bufs;
+#else 
     rb->to_write = rb->bufs;
-
+#endif
     r->read_event_handler = ngx_http_read_upload_client_request_body_handler;
 
     return ngx_http_do_read_upload_client_request_body(r);
@@ -3326,8 +3330,11 @@ ngx_http_do_read_upload_client_request_body(ngx_http_request_t *r)
     for ( ;; ) {
         for ( ;; ) {
             if (rb->buf->last == rb->buf->end) {
-
-                rc = ngx_http_process_request_body(r, rb->to_write);
+#if define nginx_version && nginx_version >= 1004000
+		rc = ngx_http_process_request_body(r, rb->free);
+#else
+		rc = ngx_http_process_request_body(r, rb->to_write);
+#endif
 
                 switch(rc) {
                     case NGX_OK:
@@ -3342,9 +3349,12 @@ ngx_http_do_read_upload_client_request_body(ngx_http_request_t *r)
                     default:
                         return NGX_HTTP_INTERNAL_SERVER_ERROR;
                 }
-
-                rb->to_write = rb->bufs->next ? rb->bufs->next : rb->bufs;
-                rb->buf->last = rb->buf->start;
+#if define nginx_version && nginx_version >= 1004000
+                rb->free = rb->bufs->next ? rb->bufs->next : rb->bufs;
+#else
+ 		rb->to_write = rb->bufs->next ? rb->bufs->next : rb->bufs;
+#endif
+ 		rb->buf->last = rb->buf->start;
             }
 
             size = rb->buf->end - rb->buf->last;
@@ -3434,8 +3444,11 @@ ngx_http_do_read_upload_client_request_body(ngx_http_request_t *r)
     if (c->read->timer_set) {
         ngx_del_timer(c->read);
     }
-
-    rc = ngx_http_process_request_body(r, rb->to_write);
+#if define nginx_version && nginx_version >= 1004000
+    rc = ngx_http_process_request_body(r, rb->free);
+#else
+    rc = ngx_http_process_request_body(r, rb->to_write);	
+#endif
 
     switch(rc) {
         case NGX_OK:
