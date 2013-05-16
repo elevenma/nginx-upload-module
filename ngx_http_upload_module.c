@@ -3185,10 +3185,8 @@ ngx_http_read_upload_client_request_body(ngx_http_request_t *r) {
         if (rb->rest <= (off_t) (b->end - b->last)) {
 
             /* the whole request body may be placed in r->header_in */
-#if defined nginx_version && nginx_version >= 1004000
-	    rb->free = rb->bufs;
-#else
-            rb->to_write = rb->bufs;
+#if defined nginx_version && nginx_version < 1004000
+	rb->to_write = rb->bufs;
 #endif
             r->read_event_handler = ngx_http_read_upload_client_request_body_handler;
 
@@ -3246,9 +3244,7 @@ ngx_http_read_upload_client_request_body(ngx_http_request_t *r) {
     }
 
     *next = cl;
-#if define nginx_version && nginx_version >= 1004000
-    rb->free = rb->bufs;
-#else 
+#if define nginx_version && nginx_version < 1004000
     rb->to_write = rb->bufs;
 #endif
     r->read_event_handler = ngx_http_read_upload_client_request_body_handler;
@@ -3331,7 +3327,7 @@ ngx_http_do_read_upload_client_request_body(ngx_http_request_t *r)
         for ( ;; ) {
             if (rb->buf->last == rb->buf->end) {
 #if define nginx_version && nginx_version >= 1004000
-		rc = ngx_http_process_request_body(r, rb->free);
+		rc = ngx_http_process_request_body(r, rb->bufs);
 #else
 		rc = ngx_http_process_request_body(r, rb->to_write);
 #endif
@@ -3350,7 +3346,7 @@ ngx_http_do_read_upload_client_request_body(ngx_http_request_t *r)
                         return NGX_HTTP_INTERNAL_SERVER_ERROR;
                 }
 #if define nginx_version && nginx_version >= 1004000
-                rb->free = rb->bufs->next ? rb->bufs->next : rb->bufs;
+                rb->bufs = rb->bufs->next ? rb->bufs->next : rb->bufs;
 #else
  		rb->to_write = rb->bufs->next ? rb->bufs->next : rb->bufs;
 #endif
@@ -3445,7 +3441,7 @@ ngx_http_do_read_upload_client_request_body(ngx_http_request_t *r)
         ngx_del_timer(c->read);
     }
 #if define nginx_version && nginx_version >= 1004000
-    rc = ngx_http_process_request_body(r, rb->free);
+    rc = ngx_http_process_request_body(r, rb->bufs);
 #else
     rc = ngx_http_process_request_body(r, rb->to_write);	
 #endif
